@@ -1,0 +1,38 @@
+{
+  "info": {
+    "name": "Mini LMS - Gateway Kelompok 5",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8101" },
+    { "key": "token", "value": "abc123" }
+  ],
+  "item": [
+    {
+      "name": "1. GET /health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/health"
+      }
+    },
+    {
+      "name": "2. GET /api/services",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/api/services"
+      }
+    },
+    {
+      "name": "3. GET /api/submissions (Bearer)",
+      "request": {
+        "method": "GET",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "url": "{{base_url}}/api/submissions?assignment_id={{assignment_id}}"
+      }
+    }
+  ]
+}
