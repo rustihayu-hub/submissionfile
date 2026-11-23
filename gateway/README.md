@@ -33,7 +33,7 @@ Alamat service berada di `gateway/services.json`. Submission File Service diarah
 
 ## Autentikasi
 
-Gateway memeriksa keberadaan dan format header `Authorization: Bearer <token>`, lalu meneruskan token ke service tujuan. Untuk endpoint Submission, Submission Service tetap memanggil Authentication Service untuk validasi token sesungguhnya. Pemeriksaan format di Gateway bukan pengganti validasi token atau pemeriksaan hak akses.
+Gateway meneruskan header `Authorization` jika disediakan. Endpoint domain memvalidasi token pada service pemilik; login/register tetap publik.
 
 ## Upload file
 
@@ -44,4 +44,4 @@ Untuk request `multipart/form-data`, Gateway membangun ulang form dari `$_POST` 
 - Postman collection: `gateway/postman/Mini-LMS.postman_collection.json`
 - PowerShell test: `gateway/tests/test_api.ps1`
 
-Jalankan pengujian setelah Gateway aktif. Pengujian integrasi Submission tetap memerlukan Authentication dan Assignment Service yang sesuai kontrak.
+Jalankan pengujian setelah semua service aktif. Submission memerlukan Authentication, Assignment, dan Notification Service yang sesuai kontrak.

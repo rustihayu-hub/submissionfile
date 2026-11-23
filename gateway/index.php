@@ -38,8 +38,6 @@ $routes = [
     'monitoring' => 'monitoring',
 ];
 
-$publicPaths = ['/api/auth/login', '/api/auth/register'];
-
 if (strpos($path, '/api/') === 0) {
     $segments = explode('/', trim($path, '/'));
     $resource = $segments[1] ?? '';
@@ -55,19 +53,7 @@ if (strpos($path, '/api/') === 0) {
         exit;
     }
 
-    // Gateway checks Bearer format. Submission Service still validates the
-    // actual token with Authentication Service; this is not token verification.
     $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
-    if (!in_array($path, $publicPaths, true) && !preg_match('/^Bearer\s+\S+$/i', $auth)) {
-        http_response_code(401);
-        echo json_encode([
-            'success' => false,
-            'error' => ['code' => 'unauthorized', 'message' => 'Token tidak ada atau formatnya tidak valid'],
-            'meta' => ['request_id' => $rid],
-        ]);
-        exit;
-    }
-
     $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
     $isMultipart = stripos($contentType, 'multipart/form-data') === 0;
     $input = $isMultipart ? '' : file_get_contents('php://input');

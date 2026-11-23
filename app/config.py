@@ -1,4 +1,5 @@
 from functools import lru_cache
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,12 +17,12 @@ class Settings(BaseSettings):
     allowed_mime_types: str = ""
     dependency_timeout_seconds: float = 3.0
     auth_service_url: str = "http://127.0.0.1:8102"
-    auth_validate_path: str = "/api/auth/validate"
+    auth_validate_path: str = "/api/v1/auth/me"
     auth_token_header: str = "Authorization"
     assignment_service_url: str = "http://127.0.0.1:8104"
     assignment_validate_path: str = "/api/assignments/{assignment_id}"
     notification_service_url: str = "http://127.0.0.1:8106"
-    notification_submission_path: str = "/api/notifications/submissions"
+    notification_submission_path: str = "/api/notifications"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -44,4 +45,6 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    # Tests can opt out of developer-local .env files while retaining normal
+    # environment variable overrides. Runtime keeps the existing .env behavior.
+    return Settings(_env_file=None if os.getenv("SUBMISSION_TESTING") == "1" else ".env")

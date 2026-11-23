@@ -29,3 +29,46 @@ class SubmissionOut(BaseModel):
     status: str
     created_at: str
     updated_at: str
+
+
+class HealthData(BaseModel):
+    service: str
+    status: str
+
+
+class HealthResponse(BaseModel):
+    success: bool = True
+    data: HealthData
+    meta: Meta
+
+
+class SubmissionListData(BaseModel):
+    items: list[SubmissionOut]
+    count: int
+
+
+class SubmissionListResponse(BaseModel):
+    success: bool = True
+    data: SubmissionListData
+    meta: Meta
+
+
+class SubmissionCreateData(BaseModel):
+    submission: SubmissionOut
+
+
+class SubmissionCreateResponse(BaseModel):
+    success: bool = True
+    data: SubmissionCreateData
+    meta: Meta
+
+
+class SubmissionDeleteData(BaseModel):
+    id: str
+    deleted: bool
+
+
+class SubmissionDeleteResponse(BaseModel):
+    success: bool = True
+    data: SubmissionDeleteData
+    meta: Meta

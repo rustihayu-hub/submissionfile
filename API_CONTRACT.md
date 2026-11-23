@@ -12,7 +12,7 @@ Kesalahan:
 {"success":false,"error":{"code":"submission_not_found","message":"Submission tidak ditemukan"},"meta":{"request_id":"req-001"}}
 ```
 
-`X-Request-ID` opsional pada request; service membuat ID bila tidak ada, mengembalikannya pada header dan `meta`. Endpoint submission memerlukan `Authorization: Bearer <token>` yang diverifikasi oleh adapter Authentication Service. Health tidak memerlukan token.
+`X-Request-ID` opsional pada request; service membuat ID bila tidak ada, mengembalikannya pada header dan `meta`. Endpoint health publik; GET/POST/DELETE submission memerlukan Bearer token yang divalidasi oleh Authentication Service.
 
 ## Endpoint
 
@@ -26,7 +26,7 @@ Memerlukan Bearer token. Mengembalikan `200` dengan `data.items` (array metadata
 
 ### `POST /api/submissions`
 
-Memerlukan Bearer token. `Content-Type: multipart/form-data`, field `assignment_id` (string) dan `file` (satu berkas). `user_id` berasal dari identitas hasil validasi auth, tidak dari input. Assignment diperiksa secara sinkron sebelum file disimpan. Contoh hasil `201`:
+Memerlukan Bearer token. `Content-Type: multipart/form-data`, field `assignment_id` (string) dan `file` (satu berkas). `user_id` diambil dari identitas Authentication. Assignment diperiksa secara sinkron sebelum file disimpan. Contoh hasil `201`:
 
 ```json
 {"success":true,"data":{"submission":{"id":"<uuid>","assignment_id":"A1","user_id":"U1","file_id":"<uuid>","original_filename":"jawaban.pdf","stored_filename":"<uuid>_jawaban.pdf","file_type":"application/pdf","file_size":1234,"status":"submitted","created_at":"...","updated_at":"..."}},"meta":{"request_id":"req-001"}}
@@ -46,7 +46,6 @@ Memerlukan Bearer token. Hapus metadata dan berkas lokal terkait, mengembalikan 
 | 201 | Submission dibuat |
 | 400 | Input tidak valid atau assignment ditolak |
 | 401 | Token hilang/tidak valid |
-| 403 | Dicadangkan untuk kebijakan izin dari kontrak auth |
 | 404 | Submission atau assignment tidak ditemukan (submission 404; assignment adapter memetakan ke 400 saat ini) |
 | 409 | Dicadangkan untuk konflik kontrak/data |
 | 413 | Berkas melebihi batas |
@@ -54,6 +53,7 @@ Memerlukan Bearer token. Hapus metadata dan berkas lokal terkait, mengembalikan 
 | 502 | Respons dependency tidak valid |
 | 503 | Dependency tidak tersedia/gagal |
 | 504 | Dependency timeout |
+| 502 | Dependency mengembalikan status/format yang tidak sesuai kontrak |
 
 Selain status tersebut, kegagalan internal persisten/cleanup mengembalikan 500.
 
@@ -80,7 +80,7 @@ sequenceDiagram
     participant FS as Local uploads
     participant N as Notification Service
     C->>S: multipart + Bearer + X-Request-ID
-    S->>A: validate token (HTTP, timeout)
+    S->>A: validate token
     A-->>S: identity
     S->>D: validate assignment (HTTP, timeout)
     D-->>S: valid assignment
@@ -90,7 +90,7 @@ sequenceDiagram
     S-->>C: 201 envelope
 ```
 
-Kontrak kelompok lain belum tersedia; URL/path dan format auth dapat diubah di `.env`/adapter. Auth response saat ini diasumsikan `{"valid":true,"user":{"id":"..."}}`; assignment mengasumsikan GET satu assignment dan JSON 200; notification mengasumsikan POST JSON. Ini placeholder untuk diselaraskan, bukan endpoint terkonfirmasi. Request ID diteruskan ke dependency. Assignment timeout/unavailable gagal tertutup. Notifikasi gagal dicatat, sementara submission tetap berhasil.
+Integrasi menggunakan Authentication `GET /api/auth/me`, Assignment `GET /api/assignments?course_id=...`, dan Notification `POST /api/notifications` dengan `user_id`, `message`, `type`, dan `submission_id`. Request ID diteruskan ke dependency. Assignment timeout/unavailable gagal tertutup. Notifikasi gagal dicatat, sementara submission tetap berhasil. Course Service tidak dipanggil langsung oleh Submission Service.
 
 ## Batasan operasional
 
@@ -98,4 +98,4 @@ Kontrak kelompok lain belum tersedia; URL/path dan format auth dapat diubah di `
 - Transaksi SQLite tidak atomik dengan filesystem. Upload dibersihkan jika insert gagal. Penghapusan metadata dilakukan sebelum unlink; bila unlink gagal, API mengembalikan 500 dan log menyatakan metadata telah terhapus, sehingga berkas yatim perlu dibersihkan operasional.
 - Notifikasi bersifat best effort tanpa outbox/retry persisten.
 - Validasi MIME memakai deklarasi multipart, bukan inspeksi signature isi. Untuk produksi, tambahkan file signature scanning/antivirus.
-- Kontrak authorization untuk izin akses assignment/ownership perlu disepakati; saat ini token valid diwajibkan, namun authorization object-level belum dapat ditegakkan tanpa kontrak tersebut.
+- Otorisasi kepemilikan submission belum diterapkan; token valid diperlukan untuk operasi domain.
